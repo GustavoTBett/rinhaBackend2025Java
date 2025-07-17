@@ -1,0 +1,96 @@
+version: "3.9"
+
+x-service-template:
+  &java-app-template
+  build:
+    context: .
+    dockerfile: Dockerfile
+    args:
+      JAR_FILE: target/app.jar
+  networks:
+    - backend
+  deploy:
+    resources:
+      limits:
+        cpus: "1.0"
+        memory: "170MB"
+
+services:
+  traefik:
+    image: traefik:v2.11
+    container_name: traefik
+    command:
+      - --entrypoints.web.address=:9999
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+    ports:
+      - "9999:9999"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - backend
+    deploy:
+      resources:
+        limits:
+          cpus: "0.2"
+          memory: "50MB"
+
+  processor-1:
+    <<: *java-app-template
+    container_name: processor-1
+    build:
+      context: ./rinhaBackend2025Processor
+      dockerfile: Dockerfile
+      args:
+        JAR_FILE: rinhaBackend2025Processor/target/rinhaBackend2025Processor-0.0.1-SNAPSHOT.jar
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.processor.rule=Host(`localhost`)
+      - traefik.http.routers.processor.entrypoints=web
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+
+  consumer-1:
+    <<: *java-app-template
+    container_name: consumer-1
+    build:
+      context: ./rinhaBackend2025Consumer
+      dockerfile: Dockerfile
+      args:
+        JAR_FILE: rinhaBackend2025Consumer/target/rinhaBackend2025Consumer-0.0.1-SNAPSHOT.jar
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.consumer.rule=Host(`localhost`)
+      - traefik.http.routers.consumer.entrypoints=web
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    command: ["redis-server", "--maxmemory", "100mb", "--maxmemory-policy", "allkeys-lru"]
+    networks:
+      - backend
+    deploy:
+      resources:
+        limits:
+          cpus: "0.2"
+          memory: "100MB"
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "15672:15672"  # UI
+      - "5672:5672"    # AMQP
+    networks:
+      - backend
+    deploy:
+      resources:
+        limits:
+          cpus: "0.3"
+          memory: "150MB"
+
+networks:
+  backend:
+    driver: bridge
