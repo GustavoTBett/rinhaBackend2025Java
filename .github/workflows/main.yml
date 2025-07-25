@@ -29,24 +29,24 @@ jobs:
           ./mvnw clean
           ./mvnw -B package --file pom.xml
 
-      - name: build the docker image
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          dockerfile: Dockerfile
-          push: false
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/rinha-backend-2025:v1.0.0
-
       - name: login to docker hub
         uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
-      - name: push the docker image to docker hub
+      - name: build and push the docker image processor
         uses: docker/build-push-action@v4
         with:
-          context: .
+          context: /rinhaBackend2025Processor
           dockerfile: Dockerfile
           push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/rinha-backend-2025:v1.0.0
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/rinha-backend-2025-processor:latest
+
+      - name: build and push the docker image consumer
+        uses: docker/build-push-action@v4
+        with:
+          context: /rinhaBackend2025Consumer
+          dockerfile: Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/rinha-backend-2025-consumer:latest
