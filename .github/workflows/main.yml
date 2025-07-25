@@ -38,15 +38,15 @@ jobs:
       - name: build and push the docker image processor
         uses: docker/build-push-action@v4
         with:
-          context: /rinhaBackend2025Processor
-          dockerfile: Dockerfile
+          context: ./rinhaBackend2025Processor
+          dockerfile: ./rinhaBackend2025Processor/Dockerfile
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/rinha-backend-2025-processor:latest
 
       - name: build and push the docker image consumer
         uses: docker/build-push-action@v4
         with:
-          context: /rinhaBackend2025Consumer
-          dockerfile: Dockerfile
+          context: ./rinhaBackend2025Consumer
+          dockerfile: ./rinhaBackend2025Consumer/Dockerfile
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/rinha-backend-2025-consumer:latest
