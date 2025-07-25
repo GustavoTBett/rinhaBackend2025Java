@@ -1,5 +1,6 @@
 package bett.gustavo.rinhaBackend2025Model.service;
 
+import bett.gustavo.rinhaBackend2025Model.dto.PaymentSummaryDto;
 import bett.gustavo.rinhaBackend2025Model.model.Payment;
 import bett.gustavo.rinhaBackend2025Model.model.SituationPayment;
 import bett.gustavo.rinhaBackend2025Model.repository.PaymentRepository;
@@ -8,6 +9,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -22,28 +24,49 @@ public class PaymentService {
     @Qualifier("redisTemplateZset")
     private RedisTemplate<String, UUID> redisTemplateZset;
 
-    @Autowired
-    @Qualifier("redisTemplatePayment")
-    private RedisTemplate<String, Payment> redisTemplate;
 
-
-    public List<Payment> findByCreatedAtBetweenAndSituation(ZonedDateTime from, ZonedDateTime to, SituationPayment situation) {
+    public Map<String, PaymentSummaryDto> paymentSummaryFromBetweenTo(ZonedDateTime from, ZonedDateTime to) {
         Long fromSeconds = from.toEpochSecond();
         Long toSeconds = to.toEpochSecond();
 
         Set<UUID> ids = redisTemplateZset.opsForZSet().rangeByScore("payments:byDate", fromSeconds, toSeconds);
 
-        List<Payment> payments = ids.stream()
-                .map(id -> redisTemplate.opsForValue().get("payment:" + id))
+        List<Optional<Payment>> optionalList = ids.stream()
                 .filter(Objects::nonNull)
-                .filter(p -> p.getSituation() == situation)
-                .collect(Collectors.toList());
-        return payments;
+                .map(id -> paymentRepository.findById(id))
+                .toList();
+
+        List<Payment> defaults = new ArrayList<>();
+        List<Payment> fallbacks = new ArrayList<>();
+
+        for (Optional<Payment> optionalPayment : optionalList) {
+            if (optionalPayment.isPresent()) {
+                Payment payment = optionalPayment.get();
+                if (payment.getSituation().equals(SituationPayment.DEFAULT)) {
+                    defaults.add(payment);
+                } else if (payment.getSituation().equals(SituationPayment.FALLBACK)) {
+                    fallbacks.add(payment);
+                }
+            }
+        }
+
+        PaymentSummaryDto paymentSummaryDtoDefault = new PaymentSummaryDto(defaults.size(), defaults.stream()
+                .map(Payment::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add));
+
+        PaymentSummaryDto paymentSummaryDtoFallback = new PaymentSummaryDto(fallbacks.size(), fallbacks.stream()
+                .map(Payment::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add));
+
+        Map<String, PaymentSummaryDto> response = new HashMap<>();
+        response.put("default", paymentSummaryDtoDefault);
+        response.put("fallback", paymentSummaryDtoFallback);
+
+        return response;
     }
 
     public Payment save(Payment payment) {
         redisTemplateZset.opsForZSet().add("payments:byDate", payment.getCorrelationId(), payment.getCreateAtSeconds());
-        redisTemplate.opsForValue().set(payment.getCorrelationId(), payment);
         return paymentRepository.save(payment);
     }
 
@@ -56,6 +79,7 @@ public class PaymentService {
     }
 
     public void deleteAll() {
+        redisTemplateZset.delete("payments:byDate");
         paymentRepository.deleteAll();
     }
 }

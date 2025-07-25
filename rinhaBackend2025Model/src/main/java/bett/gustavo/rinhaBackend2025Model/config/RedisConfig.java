@@ -29,6 +29,14 @@ public class RedisConfig {
     @Value("${spring.redis.database:}")
     private int redisDatabase;
 
+    @Bean
+    public LettuceConnectionFactory redisConnectionFactory() {
+        RedisStandaloneConfiguration configuration = new RedisStandaloneConfiguration(redisHost, redisPort);
+        configuration.setDatabase(redisDatabase);
+        configuration.setPassword(redisPassword);
+
+        return new LettuceConnectionFactory(configuration);
+    }
 
     @Bean
     public RedisTemplate<String, UUID> redisTemplateZset(RedisConnectionFactory connectionFactory) {
@@ -36,16 +44,6 @@ public class RedisConfig {
         template.setConnectionFactory(connectionFactory);
         template.setKeySerializer(new StringRedisSerializer());
         template.setValueSerializer(new GenericToStringSerializer<>(UUID.class));
-        template.afterPropertiesSet();
-        return template;
-    }
-
-    @Bean
-    public RedisTemplate<String, Payment> redisTemplatePayment(RedisConnectionFactory connectionFactory) {
-        RedisTemplate<String, Payment> template = new RedisTemplate<>();
-        template.setConnectionFactory(connectionFactory);
-        template.setKeySerializer(new StringRedisSerializer());
-        template.setValueSerializer(new Jackson2JsonRedisSerializer<>(Payment.class));
         template.afterPropertiesSet();
         return template;
     }

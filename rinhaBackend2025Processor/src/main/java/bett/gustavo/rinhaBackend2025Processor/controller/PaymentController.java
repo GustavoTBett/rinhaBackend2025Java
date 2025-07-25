@@ -33,13 +33,7 @@ public class PaymentController {
         ZonedDateTime fromDate = parseFlexibleZonedDateTime(from);
         ZonedDateTime toDate = parseFlexibleZonedDateTime(to);
 
-        List<Payment> paymentsDefault = paymentService.findByCreatedAtBetweenAndSituation(fromDate, toDate, SituationPayment.DEFAULT);
-        List<Payment> paymentsFallback = paymentService.findByCreatedAtBetweenAndSituation(fromDate, toDate, SituationPayment.FALLBACK);
-
-        List<List<Payment>> result = new ArrayList<List<Payment>>();
-        result.add(paymentsDefault);
-        result.add(paymentsFallback);
-        return ResponseEntity.ok(result);
+        return ResponseEntity.ok(paymentService.paymentSummaryFromBetweenTo(fromDate, toDate));
     }
 
     @PostMapping("/payments")

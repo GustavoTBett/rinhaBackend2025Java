@@ -1,16 +1,9 @@
-# Etapa de build
-FROM maven:3.9.6-eclipse-temurin-21-alpine AS builder
+FROM openjdk:21-jdk-slim
 
 WORKDIR /app
 
-# Copia tudo (inclusive o pom pai e os módulos)
-COPY . .
+ADD /rinhaBackend2025Processor/target/rinhaBackend2025Processor-1.0-SNAPSHOT.jar /app/rinhaBackend2025Processor-docker.jar
 
-# Faz build do projeto pai (gera os .jar dos módulos também)
-RUN mvn clean install -DskipTests
+EXPOSE 9999
 
-# Etapa final: apenas o JAR do processor
-FROM eclipse-temurin:21-jdk-alpine
-WORKDIR /app
-COPY --from=builder /app/processor/target/processor.jar app.jar
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-jar", "rinhaBackend2025Processor-docker.jar"]
