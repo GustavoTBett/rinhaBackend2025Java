@@ -10,7 +10,7 @@ services:
        - PAYMENT_PROCESSOR_URL_DEFAULT=http://localhost:8001
        - PAYMENT_PROCESSOR_URL_FALLBACK=http://localhost:8002
     ports:
-      - "9998:9998"
+      - "9998"
     deploy:
       resources:
         limits:
@@ -69,10 +69,10 @@ services:
       resources:
         limits:
           cpus: "0.25"
-          memory: "90MB"
+          memory: "50MB"
 
   rabbitmq:
-    image: rabbitmq:4.1.2-alpine
+    image: rabbitmq:4.1.2-management-alpine
     container_name: rabbitmq
     ports:
       - "15672:15672"
@@ -83,7 +83,7 @@ services:
       resources:
         limits:
           cpus: "0.25"
-          memory: "50MB"
+          memory: "150MB"
 
 networks:
   internal:

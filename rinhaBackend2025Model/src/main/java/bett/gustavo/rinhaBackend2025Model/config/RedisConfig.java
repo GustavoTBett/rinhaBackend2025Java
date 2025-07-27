@@ -17,16 +17,16 @@ import java.util.UUID;
 
 @Configuration
 public class RedisConfig {
-    @Value("${spring.redis.host}")
+    @Value("spring.redis.host")
     private String redisHost;
 
-    @Value("${spring.redis.port}")
+    @Value("spring.redis.port")
     private int redisPort;
 
-    @Value("${spring.redis.password:}")
+    @Value("spring.redis.password")
     private String redisPassword;
 
-    @Value("${spring.redis.database:}")
+    @Value("spring.redis.database")
     private int redisDatabase;
 
     @Bean
