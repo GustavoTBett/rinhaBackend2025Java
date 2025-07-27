@@ -1,7 +1,6 @@
 package bett.gustavo.rinhaBackend2025Processor.controller;
 
 import bett.gustavo.rinhaBackend2025Model.model.Payment;
-import bett.gustavo.rinhaBackend2025Model.model.SituationPayment;
 import bett.gustavo.rinhaBackend2025Model.service.PaymentService;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,8 +11,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
-import java.util.List;
 
 @RestController
 public class PaymentController {

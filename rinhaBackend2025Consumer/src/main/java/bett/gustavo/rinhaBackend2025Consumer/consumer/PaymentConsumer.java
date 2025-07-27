@@ -1,10 +1,10 @@
 package bett.gustavo.rinhaBackend2025Consumer.consumer;
 
+import bett.gustavo.rinhaBackend2025Consumer.config.ApiServiceConfig;
+import bett.gustavo.rinhaBackend2025Consumer.dto.PaymentDtoSender;
 import bett.gustavo.rinhaBackend2025Consumer.service.ApiService;
 import bett.gustavo.rinhaBackend2025Model.model.Payment;
 import bett.gustavo.rinhaBackend2025Model.model.SituationPayment;
-import bett.gustavo.rinhaBackend2025Consumer.config.ApiServiceConfig;
-import bett.gustavo.rinhaBackend2025Consumer.dto.PaymentDtoSender;
 import bett.gustavo.rinhaBackend2025Model.service.PaymentService;
 import org.springframework.amqp.rabbit.annotation.Queue;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
