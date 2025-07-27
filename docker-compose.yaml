@@ -5,17 +5,19 @@ services:
     networks:
       - internal
     environment:
-#      - PAYMENT_PROCESSOR_URL_DEFAULT=http://payment-processor-default:8080
-#      - PAYMENT_PROCESSOR_URL_FALLBACK=http://payment-processor-fallback:8080
-       - PAYMENT_PROCESSOR_URL_DEFAULT=http://localhost:8001
-       - PAYMENT_PROCESSOR_URL_FALLBACK=http://localhost:8002
+      #      - PAYMENT_PROCESSOR_URL_DEFAULT=http://payment-processor-default:8080
+      #      - PAYMENT_PROCESSOR_URL_FALLBACK=http://payment-processor-fallback:8080
+      - PAYMENT_PROCESSOR_URL_DEFAULT=http://localhost:8001
+      - PAYMENT_PROCESSOR_URL_FALLBACK=http://localhost:8002
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
     ports:
       - "9998"
     deploy:
       resources:
         limits:
-          cpus: "0.3"
-          memory: "60MB"
+          cpus: "0.2"
+          memory: "40MB"
 
   consumer-2:
     <<: *consumer
@@ -60,16 +62,16 @@ services:
   redis:
     image: redis:8.0.3-alpine
     container_name: redis
-    command: [ "redis-server", "--maxmemory", "100mb", "--maxmemory-policy", "allkeys-lru" ]
+    command: [ "redis-server", "--maxmemory", "70mb", "--maxmemory-policy", "allkeys-lru" ]
     ports:
-      - "16379:6379"
+      - "6379:6379"
     networks:
       - internal
     deploy:
       resources:
         limits:
-          cpus: "0.25"
-          memory: "50MB"
+          cpus: "0.2"
+          memory: "70MB"
 
   rabbitmq:
     image: rabbitmq:4.1.2-management-alpine
@@ -82,8 +84,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.25"
-          memory: "150MB"
+          cpus: "0.2"
+          memory: "70MB"
 
 networks:
   internal:

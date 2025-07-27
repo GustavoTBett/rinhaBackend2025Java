@@ -9,10 +9,10 @@ import org.springframework.web.reactive.function.client.WebClient;
 @Configuration
 public class ApiServiceConfig {
 
-    @Value("PAYMENT_PROCESSOR_URL_DEFAULT")
+    @Value("payment.processor.url.default")
     private String PAYMENT_PROCESSOR_URL_DEFAULT;
 
-    @Value("PAYMENT_PROCESSOR_URL_FALLBACK")
+    @Value("payment.processor.url.fallback")
     private String PAYMENT_PROCESSOR_URL_FALLBACK;
 
     @Bean
