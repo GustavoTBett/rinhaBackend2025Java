@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   consumer-1: &consumer
     image: gustavotbett/rinha-backend-2025-consumer:latest
