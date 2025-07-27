@@ -27,7 +27,7 @@ jobs:
       - name: build the app
         run: |
           ./mvnw clean
-          ./mvnw -B package --file pom.xml
+          ./mvnw -B package -Pprod --file pom.xml
 
       - name: login to docker hub
         uses: docker/login-action@v1

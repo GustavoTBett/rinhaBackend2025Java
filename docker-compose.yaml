@@ -2,56 +2,57 @@ version: "3.9"
 
 services:
   consumer-1: &consumer
-    image: gustavotbett/rinha-backend-2025:latest
+    image: gustavotbett/rinha-backend-2025-consumer:latest
     hostname: consumer-1
     networks:
-      - consumer
-      - payment-processor
+      - internal
     environment:
-      - PAYMENT_PROCESSOR_URL_DEFAULT=http://payment-processor-default:8080
-      - PAYMENT_PROCESSOR_URL_FALLBACK=http://payment-processor-fallback:8080
-    depends_on:
-      - bg-valkey
+#      - PAYMENT_PROCESSOR_URL_DEFAULT=http://payment-processor-default:8080
+#      - PAYMENT_PROCESSOR_URL_FALLBACK=http://payment-processor-fallback:8080
+       - PAYMENT_PROCESSOR_URL_DEFAULT=http://localhost:8001
+       - PAYMENT_PROCESSOR_URL_FALLBACK=http://localhost:8002
+    ports:
+      - "9998:9998"
     deploy:
       resources:
         limits:
-          cpus: "0.5"
-          memory: "110MB"
+          cpus: "0.3"
+          memory: "60MB"
 
   consumer-2:
     <<: *consumer
     hostname: consumer-2
 
-  worker-1: &worker
-    image: josafaverissimo/boogie-woogie-pay-worker:latest
-    hostname: bg-worker-1
+  processor-1: &processor
+    image: gustavotbett/rinha-backend-2025-processor:latest
+    hostname: processor-1
     networks:
-      - consumer
-      - payment-processor
-    environment:
-      - PAYMENT_PROCESSOR_URL_DEFAULT=http://payment-processor-default:8080
-      - PAYMENT_PROCESSOR_URL_FALLBACK=http://payment-processor-fallback:8080
-      - X_RINHA_TOKEN=123
-    depends_on:
-      - bg-valkey
+      - internal
+    ports:
+      - "9999"
     deploy:
       resources:
         limits:
           cpus: "0.3"
-          memory: "110MB"
+          memory: "60MB"
+
+  processor-2:
+    <<: *processor
+    hostname: processor-2
 
   nginx:
-    image: nginx:1.27.0-alpine
+    image: nginx:1.28.0-alpine
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
     ports:
       - "9999:9999"
     networks:
-      - payment-processor
-      - consumer
+      - internal
     depends_on:
       - consumer-1
       - consumer-2
+      - processor-1
+      - processor-2
     deploy:
       resources:
         limits:
@@ -59,36 +60,33 @@ services:
           memory: "10MB"
 
   redis:
-    image: redis:7-alpine
+    image: redis:8.0.3-alpine
     container_name: redis
     command: [ "redis-server", "--maxmemory", "100mb", "--maxmemory-policy", "allkeys-lru" ]
+    ports:
+      - "16379:6379"
     networks:
-      - backend
+      - internal
     deploy:
       resources:
         limits:
-          cpus: "0.2"
-          memory: "100MB"
+          cpus: "0.25"
+          memory: "90MB"
 
   rabbitmq:
-    image: rabbitmq:3-management
+    image: rabbitmq:4.1.2-alpine
     container_name: rabbitmq
     ports:
-      - "15672:15672"  # UI
-      - "5672:5672"    # AMQP
+      - "15672:15672"
+      - "5672:5672"
     networks:
-      - backend
+      - internal
     deploy:
       resources:
         limits:
-          cpus: "0.3"
-          memory: "150MB"
+          cpus: "0.25"
+          memory: "50MB"
 
 networks:
-  consumer:
+  internal:
     driver: bridge
-  payment-processor:
-    external: true
-
-volumes:
-  bgpay-valkey-data:
