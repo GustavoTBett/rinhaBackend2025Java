@@ -22,7 +22,7 @@ jobs:
         run: chmod +x ./mvnw
 
       - name: unit tests
-        run: ./mvnw -B test -Pprod --file pom.xml
+        run: ./mvnw -B test -Ptest --file pom.xml
 
       - name: build the app
         run: |
