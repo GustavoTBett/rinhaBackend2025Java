@@ -1,6 +1,6 @@
-package bett.gustavo.rinhaBackend2025Consumer.config;
+package bett.gustavo.rinhaBackend2025Api.config;
 
-import bett.gustavo.rinhaBackend2025Consumer.service.ApiService;
+import bett.gustavo.rinhaBackend2025Api.service.ApiService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

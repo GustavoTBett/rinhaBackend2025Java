@@ -1,7 +1,5 @@
-FROM openjdk:21-jdk-slim
+FROM amazoncorretto:21-alpine-jdk
 
-WORKDIR /app
+COPY target/rinhaBackend2025Consumer-1.0-SNAPSHOT.jar rinhaBackend2025Consumer-docker.jar
 
-ADD /target/rinhaBackend2025Consumer-1.0-SNAPSHOT.jar /app/rinhaBackend2025Consumer-docker.jar
-
-ENTRYPOINT ["java", "-jar", "rinhaBackend2025Consumer-docker.jar"]
+ENTRYPOINT ["java", "-jar", "/rinhaBackend2025Consumer-docker.jar"]

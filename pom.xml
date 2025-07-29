@@ -21,6 +21,7 @@
         <module>rinhaBackend2025Consumer</module>
         <module>rinhaBackend2025Processor</module>
         <module>rinhaBackend2025Model</module>
+        <module>rinhaBackend2025Api</module>
     </modules>
 
     <dependencyManagement>

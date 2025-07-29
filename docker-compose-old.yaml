@@ -1,15 +1,12 @@
 services:
-  api-1: &api
+  consumer:
     build:
-      context: ./rinhaBackend2025Api
+      context: ./rinhaBackend2025Consumer
       dockerfile: Dockerfile
-    hostname: api
+    hostname: consumer
     networks:
       - internal
-      - payment-processor
     restart: always
-    depends_on:
-      - redis
     environment:
       #      - PAYMENT_PROCESSOR_URL_DEFAULT=http://payment-processor-default:8080
       #      - PAYMENT_PROCESSOR_URL_FALLBACK=http://payment-processor-fallback:8080
@@ -17,16 +14,34 @@ services:
       - PAYMENT_PROCESSOR_URL_FALLBACK=http://host.docker.internal:8002
       - SPRING_REDIS_HOST=redis
       - SPRING_REDIS_PORT=6379
+    deploy:
+      resources:
+        limits:
+          cpus: "0.3"
+          memory: "150MB"
+
+  processor-1: &processor
+    build:
+      context: ./rinhaBackend2025Processor
+      dockerfile: Dockerfile
+    hostname: processor-1
+    networks:
+      - internal
+      - payment-processor
+    restart: always
+    environment:
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
       - SPRING_RABBITMQ_HOST=rabbitmq
     deploy:
       resources:
         limits:
-          cpus: "0.5"
-          memory: "130MB"
+          cpus: "0.4"
+          memory: "250MB"
 
-  api-2:
-    <<: *api
-    hostname: api-2
+  processor-2:
+    <<: *processor
+    hostname: processor-2
 
   nginx:
     image: nginx:1.28.0-alpine
@@ -38,25 +53,37 @@ services:
       - payment-processor
       - internal
     depends_on:
-      - api-1
-      - api-2
+      - consumer
+      - processor-1
+      - processor-2
     deploy:
       resources:
         limits:
-          cpus: "0.2"
+          cpus: "0.1"
           memory: "15MB"
 
   redis:
     image: redis:8.0.3-alpine
     container_name: redis
-    command: [ "redis-server", "--maxmemory", "35mb", "--maxmemory-policy", "allkeys-lru" ]
+    command: [ "redis-server", "--maxmemory", "20mb", "--maxmemory-policy", "allkeys-lru" ]
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          cpus: "0.2"
+          memory: "20MB"
+
+  rabbitmq:
+    image: rabbitmq:4.1.2-alpine
+    container_name: rabbitmq
     networks:
       - internal
     deploy:
       resources:
         limits:
           cpus: "0.3"
-          memory: "85MB"
+          memory: "64MB"
 
 networks:
   internal:
