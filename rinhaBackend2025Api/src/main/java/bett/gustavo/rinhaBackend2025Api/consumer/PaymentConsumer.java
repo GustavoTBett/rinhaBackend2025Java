@@ -5,16 +5,21 @@ import bett.gustavo.rinhaBackend2025Api.dto.PaymentDtoSender;
 import bett.gustavo.rinhaBackend2025Api.service.ApiService;
 import bett.gustavo.rinhaBackend2025Model.model.Payment;
 import bett.gustavo.rinhaBackend2025Model.model.SituationPayment;
+import bett.gustavo.rinhaBackend2025Model.service.Common;
 import bett.gustavo.rinhaBackend2025Model.service.PaymentService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.redis.connection.ReactiveRedisConnection;
+import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
 @Component
@@ -29,21 +34,29 @@ public class PaymentConsumer {
     @Autowired
     private PaymentService paymentService;
 
-    private final String queueName = "paymentQueue";
-
     @Autowired
-    private StringRedisTemplate redisTemplate;
+    @Qualifier("reactiveRedisTemplatePayment")
+    private ReactiveRedisTemplate<String, Payment> reactiveRedisTemplate;
 
-    @Scheduled(fixedDelay = 1000)
-    public void listesQueue() throws JsonProcessingException {
-        String json = redisTemplate.opsForList().rightPop(queueName);
-        Payment payment = new ObjectMapper().readValue(json, Payment.class);
-        PaymentDtoSender paymentDtoSender = new PaymentDtoSender(payment);
-        payment.setCreatedAt(paymentDtoSender.getRequestedAt());
-        payment.setCreateAtSeconds(paymentDtoSender.getRequestedAtSeconds());
-
-        checkAndSend(payment, paymentDtoSender);
+    @PostConstruct
+    public void init() {
+        subscribeToChannel(Common.PAYMENT_QUEUE);
     }
+
+    private void subscribeToChannel(String channelName) {
+        reactiveRedisTemplate.listenToChannel(channelName)
+                .doOnNext(msg -> {
+                    Payment payment = msg.getMessage();
+
+                    PaymentDtoSender paymentDtoSender = new PaymentDtoSender(payment);
+                    payment.setCreatedAt(paymentDtoSender.getRequestedAt());
+                    payment.setCreateAtSeconds(paymentDtoSender.getRequestedAtSeconds());
+
+                    checkAndSend(payment, paymentDtoSender);
+                })
+                .subscribe();
+    }
+
 
     private void checkAndSend(Payment payment, PaymentDtoSender dto) {
         apiServiceConfig.defaultApiService(builder)
@@ -68,7 +81,6 @@ public class PaymentConsumer {
                                         } catch (JsonProcessingException e) {
                                             throw new RuntimeException(e);
                                         }
-                                        redisTemplate.opsForList().leftPush(queueName, json);
                                     }
                                 });
                     }
@@ -90,11 +102,14 @@ public class PaymentConsumer {
                     } catch (JsonProcessingException e) {
                         throw new RuntimeException(e);
                     }
-                    redisTemplate.opsForList().leftPush(queueName, json);
                 })
                 .doOnSuccess(success -> {
                     payment.setSituation(situation);
-                    paymentService.save(payment);
+                    if (isDefault) {
+                        paymentService.saveDefault(payment);
+                    } else {
+                        paymentService.saveFallback(payment);
+                    }
                 })
                 .subscribe();
     }

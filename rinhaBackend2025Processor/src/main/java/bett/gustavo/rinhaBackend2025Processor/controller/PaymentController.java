@@ -30,7 +30,7 @@ public class PaymentController {
         ZonedDateTime fromDate = parseFlexibleZonedDateTime(from);
         ZonedDateTime toDate = parseFlexibleZonedDateTime(to);
 
-        return ResponseEntity.ok(paymentService.paymentSummaryFromBetweenTo(fromDate, toDate));
+        return ResponseEntity.ok(paymentService.paymentSummaryFromBetweenTo(fromDate.toEpochSecond(), toDate.toEpochSecond()));
     }
 
     @PostMapping("/payments")
@@ -48,17 +48,15 @@ public class PaymentController {
 
     private ZonedDateTime parseFlexibleZonedDateTime(String input) {
         if (input == null || input.isEmpty()) {
-            return ZonedDateTime.now(ZoneOffset.UTC); // ou algum valor default
+            return ZonedDateTime.now(ZoneOffset.UTC);
         }
 
         try {
-            // Tenta com fuso horário primeiro
             return ZonedDateTime.parse(input);
         } catch (DateTimeParseException e1) {
             try {
-                // Tenta como LocalDateTime e adiciona UTC como fuso
                 LocalDateTime local = LocalDateTime.parse(input);
-                return local.atZone(ZoneOffset.UTC); // ou ZoneId.of("America/Sao_Paulo")
+                return local.atZone(ZoneOffset.UTC);
             } catch (DateTimeParseException e2) {
                 throw new IllegalArgumentException("Formato de data inválido: " + input);
             }

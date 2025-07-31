@@ -1,14 +1,16 @@
 package bett.gustavo.rinhaBackend2025Model.config;
 
+import bett.gustavo.rinhaBackend2025Model.model.Payment;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.serializer.GenericToStringSerializer;
-import org.springframework.data.redis.serializer.StringRedisSerializer;
+import org.springframework.data.redis.serializer.*;
 
 import java.util.UUID;
 
@@ -36,12 +38,31 @@ public class RedisConfig {
     }
 
     @Bean
-    public RedisTemplate<String, UUID> redisTemplateZset(RedisConnectionFactory connectionFactory) {
-        RedisTemplate<String, UUID> template = new RedisTemplate<>();
+    public RedisTemplate<String, Payment> redisTemplateZset(RedisConnectionFactory connectionFactory) {
+        RedisTemplate<String, Payment> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
-        template.setKeySerializer(new StringRedisSerializer());
-        template.setValueSerializer(new GenericToStringSerializer<>(UUID.class));
+
+        StringRedisSerializer keySerializer = new StringRedisSerializer();
+        Jackson2JsonRedisSerializer<Payment> valueSerializer = new Jackson2JsonRedisSerializer<>(Payment.class);
+
+        template.setKeySerializer(keySerializer);
+        template.setValueSerializer(valueSerializer);
+        template.setHashKeySerializer(keySerializer);
+        template.setHashValueSerializer(valueSerializer);
+
         template.afterPropertiesSet();
         return template;
     }
+
+
+    @Bean(name = "reactiveRedisTemplatePayment")
+    public ReactiveRedisTemplate<String, Payment> reactiveRedisTemplatePayment(ReactiveRedisConnectionFactory factory) {
+        RedisSerializationContext<String, Payment> context = RedisSerializationContext
+                .<String, Payment>newSerializationContext(new StringRedisSerializer())
+                .value(new Jackson2JsonRedisSerializer<>(Payment.class))
+                .build();
+
+        return new ReactiveRedisTemplate<>(factory, context);
+    }
+
 }

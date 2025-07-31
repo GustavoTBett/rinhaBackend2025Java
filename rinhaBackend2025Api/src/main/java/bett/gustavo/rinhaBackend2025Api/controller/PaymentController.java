@@ -1,15 +1,20 @@
 package bett.gustavo.rinhaBackend2025Api.controller;
 
-import bett.gustavo.rinhaBackend2025Api.consumer.PaymentConsumer;
 import bett.gustavo.rinhaBackend2025Model.model.Payment;
+import bett.gustavo.rinhaBackend2025Model.service.Common;
 import bett.gustavo.rinhaBackend2025Model.service.PaymentService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.redis.connection.ReactiveRedisConnection;
+import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -22,12 +27,8 @@ public class PaymentController {
     private PaymentService paymentService;
 
     @Autowired
-    private PaymentConsumer paymentConsumer;
-
-    private final String queueName = "paymentQueue";
-
-    @Autowired
-    private StringRedisTemplate redisTemplate;
+    @Qualifier("reactiveRedisTemplatePayment")
+    private ReactiveRedisTemplate<String, Payment> reactiveRedisTemplate;
 
     @GetMapping("/payments-summary")
     @ResponseBody
@@ -35,17 +36,16 @@ public class PaymentController {
             @RequestParam("from") String from,
             @RequestParam("to") String to) {
 
-        ZonedDateTime fromDate = parseFlexibleZonedDateTime(from);
-        ZonedDateTime toDate = parseFlexibleZonedDateTime(to);
+        ZonedDateTime fromDate = Common.parseFlexibleZonedDateTime(from);
+        ZonedDateTime toDate = Common.parseFlexibleZonedDateTime(to);
 
-        return ResponseEntity.ok(paymentService.paymentSummaryFromBetweenTo(fromDate, toDate));
+        return ResponseEntity.ok(paymentService.paymentSummaryFromBetweenTo(fromDate.toEpochSecond(), toDate.toEpochSecond()));
     }
 
     @PostMapping("/payments")
     @ResponseBody
-    public ResponseEntity postPayments(@RequestBody Payment payment) throws JsonProcessingException {
-        String json = new ObjectMapper().writeValueAsString(payment);
-        redisTemplate.opsForList().leftPush(queueName, json);
+    public ResponseEntity postPayments(@RequestBody Payment payment) {
+        reactiveRedisTemplate.convertAndSend(Common.PAYMENT_QUEUE, payment);
         return ResponseEntity.ok("Payment received with success!");
     }
 
@@ -53,24 +53,5 @@ public class PaymentController {
     public ResponseEntity deletePayments() {
         paymentService.deleteAll();
         return ResponseEntity.noContent().build();
-    }
-
-    private ZonedDateTime parseFlexibleZonedDateTime(String input) {
-        if (input == null || input.isEmpty()) {
-            return ZonedDateTime.now(ZoneOffset.UTC); // ou algum valor default
-        }
-
-        try {
-            // Tenta com fuso horário primeiro
-            return ZonedDateTime.parse(input);
-        } catch (DateTimeParseException e1) {
-            try {
-                // Tenta como LocalDateTime e adiciona UTC como fuso
-                LocalDateTime local = LocalDateTime.parse(input);
-                return local.atZone(ZoneOffset.UTC); // ou ZoneId.of("America/Sao_Paulo")
-            } catch (DateTimeParseException e2) {
-                throw new IllegalArgumentException("Formato de data inválido: " + input);
-            }
-        }
     }
 }

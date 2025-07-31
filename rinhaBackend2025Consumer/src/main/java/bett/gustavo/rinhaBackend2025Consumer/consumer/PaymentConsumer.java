@@ -77,7 +77,11 @@ public class PaymentConsumer {
                 })
                 .doOnSuccess(success -> {
                     payment.setSituation(situation);
-                    paymentService.save(payment);
+                    if (isDefault) {
+                        paymentService.saveDefault(payment);
+                    } else {
+                        paymentService.saveFallback(payment);
+                    }
                 })
                 .subscribe();
     }

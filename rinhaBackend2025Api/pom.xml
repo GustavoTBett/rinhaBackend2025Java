@@ -47,6 +47,11 @@
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>redis.clients</groupId>
+            <artifactId>jedis</artifactId>
+            <version>6.0.0</version>
+        </dependency>
     </dependencies>
 
     <build>

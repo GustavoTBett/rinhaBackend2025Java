@@ -24,4 +24,6 @@ public class Payment implements Serializable {
     private String createdAt;
 
     private Long createAtSeconds;
+
+    
 }

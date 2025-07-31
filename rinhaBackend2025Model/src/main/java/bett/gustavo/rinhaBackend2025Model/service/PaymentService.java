@@ -21,39 +21,19 @@ public class PaymentService {
 
     @Autowired
     @Qualifier("redisTemplateZset")
-    private RedisTemplate<String, UUID> redisTemplateZset;
+    private RedisTemplate<String, Payment> redisTemplateZset;
 
+    public Map<String, PaymentSummaryDto> paymentSummaryFromBetweenTo(Long fromEpoch, Long toEpoch) {
+        Set<Payment> paymentDefault = redisTemplateZset.opsForZSet().rangeByScore("paymentsDefault:byDate", fromEpoch, toEpoch);
+        Set<Payment> paymentFallback = redisTemplateZset.opsForZSet().rangeByScore("paymentsFallback:byDate", fromEpoch, toEpoch);
 
-    public Map<String, PaymentSummaryDto> paymentSummaryFromBetweenTo(ZonedDateTime from, ZonedDateTime to) {
-        Long fromSeconds = from.toEpochSecond();
-        Long toSeconds = to.toEpochSecond();
-
-        Set<UUID> ids = redisTemplateZset.opsForZSet().rangeByScore("payments:byDate", fromSeconds, toSeconds);
-
-        List<Optional<Payment>> optionalList = ids.stream()
-                .filter(Objects::nonNull)
-                .map(id -> paymentRepository.findById(id))
-                .toList();
-
-        List<Payment> defaults = new ArrayList<>();
-        List<Payment> fallbacks = new ArrayList<>();
-
-        for (Optional<Payment> optionalPayment : optionalList) {
-            if (optionalPayment.isPresent()) {
-                Payment payment = optionalPayment.get();
-                if (payment.getSituation().equals(SituationPayment.DEFAULT)) {
-                    defaults.add(payment);
-                } else if (payment.getSituation().equals(SituationPayment.FALLBACK)) {
-                    fallbacks.add(payment);
-                }
-            }
-        }
-
-        PaymentSummaryDto paymentSummaryDtoDefault = new PaymentSummaryDto(defaults.size(), defaults.stream()
+        assert paymentDefault != null;
+        PaymentSummaryDto paymentSummaryDtoDefault = new PaymentSummaryDto(paymentDefault.size(), paymentDefault.stream()
                 .map(Payment::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add));
 
-        PaymentSummaryDto paymentSummaryDtoFallback = new PaymentSummaryDto(fallbacks.size(), fallbacks.stream()
+        assert paymentFallback != null;
+        PaymentSummaryDto paymentSummaryDtoFallback = new PaymentSummaryDto(paymentFallback.size(), paymentFallback.stream()
                 .map(Payment::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add));
 
@@ -64,9 +44,12 @@ public class PaymentService {
         return response;
     }
 
-    public Payment save(Payment payment) {
-        redisTemplateZset.opsForZSet().add("payments:byDate", payment.getCorrelationId(), payment.getCreateAtSeconds());
-        return paymentRepository.save(payment);
+    public void saveDefault(Payment payment) {
+        redisTemplateZset.opsForZSet().add("paymentsDefault:byDate", payment, payment.getCreateAtSeconds());
+    }
+
+    public void saveFallback(Payment payment) {
+        redisTemplateZset.opsForZSet().add("paymentsFallback:byDate", payment, payment.getCreateAtSeconds());
     }
 
     public Payment update(Payment payment) {
