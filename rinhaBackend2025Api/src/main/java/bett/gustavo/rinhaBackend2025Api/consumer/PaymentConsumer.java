@@ -75,12 +75,7 @@ public class PaymentConsumer {
                                     if (fallbackHealth != null && !fallbackHealth.getFailing()) {
                                         sendToApi(payment, dto, false);
                                     } else {
-                                        String json = null;
-                                        try {
-                                            json = new ObjectMapper().writeValueAsString(payment);
-                                        } catch (JsonProcessingException e) {
-                                            throw new RuntimeException(e);
-                                        }
+                                        reactiveRedisTemplate.convertAndSend(Common.PAYMENT_QUEUE, payment);
                                     }
                                 });
                     }
@@ -91,23 +86,16 @@ public class PaymentConsumer {
         ApiService api = isDefault ? apiServiceConfig.defaultApiService(builder)
                 : apiServiceConfig.fallbackApiService(builder);
 
-        SituationPayment situation = isDefault ? SituationPayment.DEFAULT
-                : SituationPayment.FALLBACK;
-
         api.sendPayments(dto)
                 .doOnError(error -> {
-                    String json = null;
-                    try {
-                        json = new ObjectMapper().writeValueAsString(payment);
-                    } catch (JsonProcessingException e) {
-                        throw new RuntimeException(e);
-                    }
+                    reactiveRedisTemplate.convertAndSend(Common.PAYMENT_QUEUE, payment);
                 })
                 .doOnSuccess(success -> {
-                    payment.setSituation(situation);
                     if (isDefault) {
+                        payment.setSituation(SituationPayment.DEFAULT);
                         paymentService.saveDefault(payment);
                     } else {
+                        payment.setSituation(SituationPayment.FALLBACK);
                         paymentService.saveFallback(payment);
                     }
                 })

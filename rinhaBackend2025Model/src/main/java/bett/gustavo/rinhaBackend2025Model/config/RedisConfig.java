@@ -54,7 +54,6 @@ public class RedisConfig {
         return template;
     }
 
-
     @Bean(name = "reactiveRedisTemplatePayment")
     public ReactiveRedisTemplate<String, Payment> reactiveRedisTemplatePayment(ReactiveRedisConnectionFactory factory) {
         RedisSerializationContext<String, Payment> context = RedisSerializationContext

@@ -43,8 +43,6 @@ public class ApiService {
     }
 
     //Endpoints Administrativos de Payment Processor
-
-
     public Mono<PaymentsSummaryDto> getPaymentsSummary(ZonedDateTime from, ZonedDateTime to) {
         return webClient
                 .get()

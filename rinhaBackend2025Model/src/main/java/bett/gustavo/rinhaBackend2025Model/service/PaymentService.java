@@ -52,16 +52,9 @@ public class PaymentService {
         redisTemplateZset.opsForZSet().add("paymentsFallback:byDate", payment, payment.getCreateAtSeconds());
     }
 
-    public Payment update(Payment payment) {
-        return paymentRepository.save(payment);
-    }
-
-    public void deleteById(UUID uuid) {
-        paymentRepository.deleteById(uuid);
-    }
-
     public void deleteAll() {
-        redisTemplateZset.delete("payments:byDate");
+        redisTemplateZset.delete("paymentsDefault:byDate");
+        redisTemplateZset.delete("paymentsFallback:byDate");
         paymentRepository.deleteAll();
     }
 }
