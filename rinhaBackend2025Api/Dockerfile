@@ -1,9 +1,7 @@
-FROM alpine:3.18
+FROM ubuntu:jammy
 
 RUN apk add --no-cache curl
 
-COPY rinhaBackend2025Api/target/rinhaBackend2025Api ./rinhaBackend2025Api
+COPY target/rinhaBackend2025Api /springboot-graalvm-docker
 
-RUN chmod +x ./rinhaBackend2025Api
-
-ENTRYPOINT ["./rinhaBackend2025Api"]
+CMD ["/springboot-graalvm-docker"]
