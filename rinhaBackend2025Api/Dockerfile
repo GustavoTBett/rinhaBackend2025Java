@@ -1,9 +1,7 @@
-FROM alpine:3.18
+FROM amazoncorretto:21-alpine-jdk
 
 RUN apk add --no-cache curl
 
-COPY target/rinhaBackend2025Api ./rinhaBackend2025Api
+COPY target/rinhaBackend2025Api app
 
-RUN chmod +x ./rinhaBackend2025Api
-
-ENTRYPOINT ["./rinhaBackend2025Api"]
+ENTRYPOINT ["/app"]
