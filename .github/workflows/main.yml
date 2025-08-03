@@ -45,7 +45,7 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
         with:
-          context: ./rinhaBackend2025Api
+          context: .
           dockerfile: ./rinhaBackend2025Api/Dockerfile
           push: true
           tags: |
