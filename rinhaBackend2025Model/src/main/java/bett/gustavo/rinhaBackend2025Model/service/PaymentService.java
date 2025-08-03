@@ -2,7 +2,6 @@ package bett.gustavo.rinhaBackend2025Model.service;
 
 import bett.gustavo.rinhaBackend2025Model.dto.PaymentSummaryDto;
 import bett.gustavo.rinhaBackend2025Model.model.Payment;
-import bett.gustavo.rinhaBackend2025Model.model.SituationPayment;
 import bett.gustavo.rinhaBackend2025Model.repository.PaymentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -10,8 +9,9 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.time.ZonedDateTime;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 @Service
 public class PaymentService {

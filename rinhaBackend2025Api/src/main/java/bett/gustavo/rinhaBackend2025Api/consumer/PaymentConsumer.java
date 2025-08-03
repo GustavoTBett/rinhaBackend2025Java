@@ -7,19 +7,14 @@ import bett.gustavo.rinhaBackend2025Model.model.Payment;
 import bett.gustavo.rinhaBackend2025Model.model.SituationPayment;
 import bett.gustavo.rinhaBackend2025Model.service.Common;
 import bett.gustavo.rinhaBackend2025Model.service.PaymentService;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.data.redis.connection.ReactiveRedisConnection;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
 @Component

@@ -26,8 +26,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.6"
-          memory: "140MB"
+          cpus: "0.5"
+          memory: "120MB"
 
   api-2:
     <<: *api
@@ -56,14 +56,14 @@ services:
   redis:
     image: redis:8.0.3-alpine
     container_name: redis
-    command: [ "redis-server", "--maxmemory", "75mb", "--maxmemory-policy", "allkeys-lru" ]
+    command: [ "redis-server", "--maxmemory", "100mb", "--maxmemory-policy", "allkeys-lru" ]
     networks:
       - internal
     deploy:
       resources:
         limits:
-          cpus: "0.1"
-          memory: "60MB"
+          cpus: "0.3"
+          memory: "100MB"
 
 networks:
   internal:
