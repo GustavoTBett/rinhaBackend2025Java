@@ -15,10 +15,10 @@ import org.springframework.scheduling.annotation.EnableAsync;
 @EnableRedisRepositories(basePackages = "bett.gustavo.rinhaBackend2025Model.repository")
 @EntityScan(basePackages = "bett.gustavo.rinhaBackend2025Model.model")
 @EnableAsync
-public class RinhaBackend2025ApiApplicacation {
+public class RinhaBackend2025ApiApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(RinhaBackend2025ApiApplicacation.class, args);
+		SpringApplication.run(RinhaBackend2025ApiApplication.class, args);
 	}
 
 }

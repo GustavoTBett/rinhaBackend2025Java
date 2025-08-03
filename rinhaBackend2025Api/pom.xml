@@ -76,6 +76,9 @@
                         <groupId>org.graalvm.buildtools</groupId>
                         <artifactId>native-maven-plugin</artifactId>
                         <version>0.11.0</version>
+                        <configuration>
+                            <mainClass>bett.gustavo.rinhaBackend2025Api.RinhaBackend2025ApiApplication</mainClass>
+                        </configuration>
                         <executions>
                             <execution>
                                 <goals>
