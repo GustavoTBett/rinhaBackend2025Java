@@ -8,6 +8,12 @@ services:
       - internal
       - payment-processor
     restart: always
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9999/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
     depends_on:
       - redis
     environment:
@@ -20,8 +26,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.5"
-          memory: "130MB"
+          cpus: "0.6"
+          memory: "140MB"
 
   api-2:
     <<: *api
@@ -37,13 +43,15 @@ services:
       - payment-processor
       - internal
     depends_on:
-      - api-1
-      - api-2
+      api-1:
+        condition: service_healthy
+      api-2:
+        condition: service_healthy
     deploy:
       resources:
         limits:
           cpus: "0.2"
-          memory: "15MB"
+          memory: "10MB"
 
   redis:
     image: redis:8.0.3-alpine
@@ -54,8 +62,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.3"
-          memory: "75MB"
+          cpus: "0.1"
+          memory: "60MB"
 
 networks:
   internal:
