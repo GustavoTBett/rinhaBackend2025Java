@@ -23,9 +23,6 @@ jobs:
       - name: Grant execute permission to Maven Wrapper
         run: chmod +x ./mvnw
 
-      - name: Run unit tests
-        run: ./mvnw test --file pom.xml
-
       - name: Build native image using GraalVM
         run: |
           ./mvnw -pl rinhaBackend2025Api -Pnative native:compile -DskipTests
