@@ -35,10 +35,18 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
-      - name: build and push the docker image api
+      - name: Extract Docker image version (incremental)
+        id: vars
+        run: |
+          GIT_COMMIT_COUNT=$(git rev-list --count HEAD)
+          echo "version=build-${GIT_COMMIT_COUNT}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push Docker image
         uses: docker/build-push-action@v4
         with:
           context: ./rinhaBackend2025Api
           dockerfile: ./rinhaBackend2025Api/Dockerfile
           push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/rinha-backend-2025-api:latest
+          tags: |
+            ${{ secrets.DOCKER_HUB_USERNAME }}/rinha-backend-2025-api:latest
+            ${{ secrets.DOCKER_HUB_USERNAME }}/rinha-backend-2025-api:${{ steps.vars.outputs.version }}
