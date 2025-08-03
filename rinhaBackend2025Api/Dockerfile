@@ -1,6 +1,6 @@
 FROM ubuntu:jammy
 
-RUN apk add --no-cache curl
+RUN apt-get update && apt-get install -y curl
 
 COPY target/rinhaBackend2025Api /springboot-graalvm-docker
 
