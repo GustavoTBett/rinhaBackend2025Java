@@ -64,21 +64,6 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
-            <plugin>
-                <groupId>org.graalvm.buildtools</groupId>
-                <artifactId>native-maven-plugin</artifactId>
-                <version>0.11.0</version>
-                <configuration>
-                    <mainClass>bett.gustavo.rinhaBackend2025Api.RinhaBackend2025ApiApplication</mainClass>
-                </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>compile</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
         </plugins>
     </build>
 
@@ -91,9 +76,6 @@
                         <groupId>org.graalvm.buildtools</groupId>
                         <artifactId>native-maven-plugin</artifactId>
                         <version>0.11.0</version>
-                        <configuration>
-                            <mainClass>bett.gustavo.rinhaBackend2025Api.RinhaBackend2025ApiApplication</mainClass>
-                        </configuration>
                         <executions>
                             <execution>
                                 <goals>
