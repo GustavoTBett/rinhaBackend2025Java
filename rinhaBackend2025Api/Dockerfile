@@ -1,7 +1,9 @@
-FROM amazoncorretto:21-alpine-jdk
+FROM alpine:3.18
 
 RUN apk add --no-cache curl
 
-COPY target/rinhaBackend2025Api-1.0-SNAPSHOT.jar rinhaBackend2025Api-docker.jar
+COPY target/rinhaBackend2025Api ./rinhaBackend2025Api
 
-ENTRYPOINT ["java", "-jar", "/rinhaBackend2025Api-docker.jar"]
+RUN chmod +x ./rinhaBackend2025Api
+
+ENTRYPOINT ["./rinhaBackend2025Api"]
