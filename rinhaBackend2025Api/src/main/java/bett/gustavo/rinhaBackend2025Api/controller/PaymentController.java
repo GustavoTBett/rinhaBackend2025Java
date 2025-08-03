@@ -33,8 +33,8 @@ public class PaymentController {
     @GetMapping("/payments-summary")
     @ResponseBody
     public ResponseEntity getPaymentsSummary(
-            @RequestParam("from") String from,
-            @RequestParam("to") String to) {
+            @RequestParam(value = "from", required = false) String from,
+            @RequestParam(value = "to", required = false) String to) {
 
         ZonedDateTime fromDate = Common.parseFlexibleZonedDateTime(from);
         ZonedDateTime toDate = Common.parseFlexibleZonedDateTime(to);
