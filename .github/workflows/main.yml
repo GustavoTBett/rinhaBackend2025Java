@@ -35,11 +35,11 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
-      - name: Extract Docker image version (incremental)
+      - name: Generate timestamp-based tag
         id: vars
         run: |
-          GIT_COMMIT_COUNT=$(git rev-list --count HEAD)
-          echo "version=build-${GIT_COMMIT_COUNT}" >> "$GITHUB_OUTPUT"
+          VERSION=$(date +'%Y%m%d-%H%M%S')
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
