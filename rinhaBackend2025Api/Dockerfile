@@ -1,6 +1,8 @@
 FROM alpine:3.18
 
-COPY target/rinhaBackend2025Api /rinhaBackend2025Api
+RUN apk add --no-cache curl
+
+COPY target/rinhaBackend2025Api rinhaBackend2025Api
 
 RUN chmod +x /rinhaBackend2025Api
 
