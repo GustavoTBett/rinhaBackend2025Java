@@ -28,7 +28,7 @@ jobs:
 
       - name: Build native image using GraalVM
         run: |
-          ./mvnw -pl rinhaBackend2025Api -Pnative native:compile -DskipTests
+          ./mvnw -pl rinhaBackend2025Api -Pnative package -DskipTests
 
       - name: login to docker hub
         uses: docker/login-action@v1
