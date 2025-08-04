@@ -1,6 +1,7 @@
 package bett.gustavo.rinhaBackend2025Api.dto;
 
 import bett.gustavo.rinhaBackend2025Model.model.Payment;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.math.BigDecimal;
@@ -9,6 +10,7 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 
 @Getter
+@AllArgsConstructor
 public class PaymentDtoSender {
 
     private String correlationId;
