@@ -19,8 +19,8 @@ public record PaymentDtoSender(
         OffsetDateTime nowUtc = OffsetDateTime.now(ZoneOffset.UTC);
         String formattedDate = nowUtc.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"));
         return new PaymentDtoSender(
-                payment.getCorrelationId().toString(),
-                payment.getAmount(),
+                payment.correlationId().toString(),
+                payment.amount(),
                 formattedDate,
                 nowUtc.toEpochSecond()
         );

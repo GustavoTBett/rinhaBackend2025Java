@@ -8,24 +8,33 @@ import org.springframework.data.redis.core.index.Indexed;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
-@Data
-@RedisHash(value = "payment")
-@AllArgsConstructor
-public class Payment implements Serializable {
+@RedisHash("payment")
+public record Payment(
+        @Id
+        @Indexed
+        UUID correlationId,
+        BigDecimal amount,
+        SituationPayment situation,
+        String createdAt,
+        Long createAtSeconds
+) implements Serializable {
 
-    @Id
-    @Indexed
-    private UUID correlationId;
+    public Payment(UUID correlationId, BigDecimal amount, String createdAt, Long createAtSeconds) {
+        this(correlationId, amount, SituationPayment.QUEUE, createdAt, createAtSeconds);
+    }
 
-    private BigDecimal amount;
-
-    private SituationPayment situation = SituationPayment.QUEUE;
-
-    private String createdAt;
-
-    private Long createAtSeconds;
-
-    
+    public static Payment atualizaPayment(Payment payment, String createdAt, Long createAtSeconds, SituationPayment situation) {
+        return new Payment(
+                payment.correlationId(),
+                payment.amount(),
+                situation,
+                createdAt,
+                createAtSeconds
+        );
+    }
 }

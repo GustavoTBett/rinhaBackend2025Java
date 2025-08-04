@@ -29,12 +29,12 @@ public class PaymentService {
 
         assert paymentDefault != null;
         PaymentSummaryDto paymentSummaryDtoDefault = new PaymentSummaryDto(paymentDefault.size(), paymentDefault.stream()
-                .map(Payment::getAmount)
+                .map(Payment::amount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add));
 
         assert paymentFallback != null;
         PaymentSummaryDto paymentSummaryDtoFallback = new PaymentSummaryDto(paymentFallback.size(), paymentFallback.stream()
-                .map(Payment::getAmount)
+                .map(Payment::amount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add));
 
         Map<String, PaymentSummaryDto> response = new HashMap<>();
@@ -45,11 +45,11 @@ public class PaymentService {
     }
 
     public void saveDefault(Payment payment) {
-        redisTemplateZset.opsForZSet().add("paymentsDefault:byDate", payment, payment.getCreateAtSeconds());
+        redisTemplateZset.opsForZSet().add("paymentsDefault:byDate", payment, payment.createAtSeconds());
     }
 
     public void saveFallback(Payment payment) {
-        redisTemplateZset.opsForZSet().add("paymentsFallback:byDate", payment, payment.getCreateAtSeconds());
+        redisTemplateZset.opsForZSet().add("paymentsFallback:byDate", payment, payment.createAtSeconds());
     }
 
     public void deleteAll() {

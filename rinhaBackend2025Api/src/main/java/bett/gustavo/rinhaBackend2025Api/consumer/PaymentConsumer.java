@@ -47,8 +47,6 @@ public class PaymentConsumer {
                     Payment payment = msg.getMessage();
 
                     PaymentDtoSender paymentDtoSender = PaymentDtoSender.from(payment);
-                    payment.setCreatedAt(paymentDtoSender.requestedAt());
-                    payment.setCreateAtSeconds(paymentDtoSender.requestedAtSeconds());
 
                     checkAndSend(payment, paymentDtoSender);
                 })
@@ -91,11 +89,11 @@ public class PaymentConsumer {
                 .doOnSuccess(success -> {
                     logger.debug("Salvando payment");
                     if (isDefault) {
-                        payment.setSituation(SituationPayment.DEFAULT);
-                        paymentService.saveDefault(payment);
+                        Payment paymentSave = Payment.atualizaPayment(payment, dto.requestedAt(), dto.requestedAtSeconds(), SituationPayment.DEFAULT);
+                        paymentService.saveDefault(paymentSave);
                     } else {
-                        payment.setSituation(SituationPayment.FALLBACK);
-                        paymentService.saveFallback(payment);
+                        Payment paymentSave = Payment.atualizaPayment(payment, dto.requestedAt(), dto.requestedAtSeconds(), SituationPayment.FALLBACK);
+                        paymentService.saveFallback(paymentSave);
                     }
                 })
                 .subscribe();
