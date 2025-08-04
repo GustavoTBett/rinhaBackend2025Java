@@ -8,6 +8,7 @@ import bett.gustavo.rinhaBackend2025Model.model.SituationPayment;
 import bett.gustavo.rinhaBackend2025Model.service.Common;
 import bett.gustavo.rinhaBackend2025Model.service.PaymentService;
 import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
@@ -19,6 +20,8 @@ import java.time.Duration;
 
 @Component
 public class PaymentConsumer {
+
+    private static Logger logger;
 
     @Autowired
     private ApiServiceConfig apiServiceConfig;
@@ -43,9 +46,9 @@ public class PaymentConsumer {
                 .doOnNext(msg -> {
                     Payment payment = msg.getMessage();
 
-                    PaymentDtoSender paymentDtoSender = new PaymentDtoSender(payment);
-                    payment.setCreatedAt(paymentDtoSender.getRequestedAt());
-                    payment.setCreateAtSeconds(paymentDtoSender.getRequestedAtSeconds());
+                    PaymentDtoSender paymentDtoSender = PaymentDtoSender.from(payment);
+                    payment.setCreatedAt(paymentDtoSender.requestedAt());
+                    payment.setCreateAtSeconds(paymentDtoSender.requestedAtSeconds());
 
                     checkAndSend(payment, paymentDtoSender);
                 })
@@ -59,7 +62,7 @@ public class PaymentConsumer {
                 .timeout(Duration.ofSeconds(2))
                 .onErrorResume(ex -> Mono.empty())
                 .subscribe(health -> {
-                    if (health != null && !health.getFailing()) {
+                    if (health != null && !health.failing()) {
                         sendToApi(payment, dto, true);
                     } else {
                         apiServiceConfig.fallbackApiService(builder)
@@ -67,7 +70,7 @@ public class PaymentConsumer {
                                 .timeout(Duration.ofSeconds(2))
                                 .onErrorResume(ex -> Mono.empty())
                                 .subscribe(fallbackHealth -> {
-                                    if (fallbackHealth != null && !fallbackHealth.getFailing()) {
+                                    if (fallbackHealth != null && !fallbackHealth.failing()) {
                                         sendToApi(payment, dto, false);
                                     } else {
                                         reactiveRedisTemplate.convertAndSend(Common.PAYMENT_QUEUE, payment);
@@ -86,6 +89,7 @@ public class PaymentConsumer {
                     reactiveRedisTemplate.convertAndSend(Common.PAYMENT_QUEUE, payment);
                 })
                 .doOnSuccess(success -> {
+                    logger.debug("Salvando payment");
                     if (isDefault) {
                         payment.setSituation(SituationPayment.DEFAULT);
                         paymentService.saveDefault(payment);

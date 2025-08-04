@@ -34,59 +34,59 @@ public class ApiService {
                 .bodyToMono(HealthCheckDto.class);
     }
 
-    public Mono<ResponsePaymentApi> getPayments(UUID uuid) {
-        return webClient
-                .get()
-                .uri("/payments", uuid.toString())
-                .retrieve()
-                .bodyToMono(ResponsePaymentApi.class);
-    }
+//    public Mono<ResponsePaymentApi> getPayments(UUID uuid) {
+//        return webClient
+//                .get()
+//                .uri("/payments", uuid.toString())
+//                .retrieve()
+//                .bodyToMono(ResponsePaymentApi.class);
+//    }
 
     //Endpoints Administrativos de Payment Processor
-    public Mono<PaymentsSummaryDto> getPaymentsSummary(ZonedDateTime from, ZonedDateTime to) {
-        return webClient
-                .get()
-                .uri(uriBuilder -> {
-                    var builder = uriBuilder.path("/admin/payments-summary");
-                    if (from != null) {
-                        builder.queryParam("from", from.toString());
-                    }
-                    if (to != null) {
-                        builder.queryParam("to", to.toString());
-                    }
-                    return builder.build();
-                })
-                .header("X-Rinha-Token", new TokenDto().getToken())
-                .retrieve()
-                .bodyToMono(PaymentsSummaryDto.class);
-    }
-
-    public Mono<String> setToken(TokenDto tokenDto) {
-        return webClient
-                .put()
-                .uri("/admin/configurations/token")
-                .bodyValue(tokenDto)
-                .retrieve()
-                .bodyToMono(String.class);
-    }
-
-    public Mono<String> setDelay(DelayDto delayDto) {
-        return webClient
-                .put()
-                .uri("/admin/configurations/delay")
-                .bodyValue(delayDto)
-                .retrieve()
-                .bodyToMono(String.class);
-    }
-
-    public Mono<String> setFailure(FailureDto failureDto) {
-        return webClient
-                .put()
-                .uri("/admin/configurations/failure")
-                .bodyValue(failureDto)
-                .retrieve()
-                .bodyToMono(String.class);
-    }
+//    public Mono<PaymentsSummaryDto> getPaymentsSummary(ZonedDateTime from, ZonedDateTime to) {
+//        return webClient
+//                .get()
+//                .uri(uriBuilder -> {
+//                    var builder = uriBuilder.path("/admin/payments-summary");
+//                    if (from != null) {
+//                        builder.queryParam("from", from.toString());
+//                    }
+//                    if (to != null) {
+//                        builder.queryParam("to", to.toString());
+//                    }
+//                    return builder.build();
+//                })
+//                .header("X-Rinha-Token", new TokenDto().getToken())
+//                .retrieve()
+//                .bodyToMono(PaymentsSummaryDto.class);
+//    }
+//
+//    public Mono<String> setToken(TokenDto tokenDto) {
+//        return webClient
+//                .put()
+//                .uri("/admin/configurations/token")
+//                .bodyValue(tokenDto)
+//                .retrieve()
+//                .bodyToMono(String.class);
+//    }
+//
+//    public Mono<String> setDelay(DelayDto delayDto) {
+//        return webClient
+//                .put()
+//                .uri("/admin/configurations/delay")
+//                .bodyValue(delayDto)
+//                .retrieve()
+//                .bodyToMono(String.class);
+//    }
+//
+//    public Mono<String> setFailure(FailureDto failureDto) {
+//        return webClient
+//                .put()
+//                .uri("/admin/configurations/failure")
+//                .bodyValue(failureDto)
+//                .retrieve()
+//                .bodyToMono(String.class);
+//    }
 
     public Mono<String> purgeDatabase() {
         return webClient

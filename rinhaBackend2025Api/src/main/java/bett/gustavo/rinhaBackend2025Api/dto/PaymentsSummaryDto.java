@@ -5,12 +5,9 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 
-@Data
-@AllArgsConstructor
-public class PaymentsSummaryDto {
-
-    private Long totalRequests;
-    private BigDecimal totalAmount;
-    private BigDecimal totalFee;
-    private BigDecimal feePerTransaction;
-}
+public record PaymentsSummaryDto(
+        Long totalRequests,
+        BigDecimal totalAmount,
+        BigDecimal totalFee,
+        BigDecimal feePerTransaction
+) {}

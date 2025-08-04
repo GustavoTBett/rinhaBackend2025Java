@@ -3,9 +3,6 @@ package bett.gustavo.rinhaBackend2025Api.dto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
-@Data
-@AllArgsConstructor
-public class ResponsePaymentApi {
-
-    private String message;
-}
+public record ResponsePaymentApi (
+        String message
+) {}
