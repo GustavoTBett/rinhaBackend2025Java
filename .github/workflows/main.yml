@@ -23,12 +23,9 @@ jobs:
       - name: Grant execute permission to Maven Wrapper
         run: chmod +x ./mvnw
 
-      - name: Install all modules (model, etc.)
-        run: ./mvnw clean install -DskipTests
-
       - name: Build native image using GraalVM
         run: |
-          ./mvnw -pl rinhaBackend2025Api -Pnative native:compile -DskipTests
+          ./mvnw -pl rinhaBackend2025Api -Pnative -DskipTests
 
       - name: login to docker hub
         uses: docker/login-action@v1

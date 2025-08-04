@@ -2,6 +2,6 @@ FROM ubuntu:jammy
 
 RUN apt-get update && apt-get install -y curl
 
-COPY target/rinhaBackend2025Api /springboot-graalvm-docker
+COPY target/rinhaBackend2025Api /rinhaBackend2025Api
 
-CMD ["/springboot-graalvm-docker"]
+CMD ["/rinhaBackend2025Api"]
