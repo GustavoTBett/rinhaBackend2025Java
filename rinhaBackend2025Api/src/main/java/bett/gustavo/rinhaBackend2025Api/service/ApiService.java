@@ -1,12 +1,11 @@
 package bett.gustavo.rinhaBackend2025Api.service;
 
-import bett.gustavo.rinhaBackend2025Api.dto.*;
+import bett.gustavo.rinhaBackend2025Api.dto.HealthCheckDto;
+import bett.gustavo.rinhaBackend2025Api.dto.PaymentDtoSender;
+import bett.gustavo.rinhaBackend2025Api.dto.ResponsePaymentApi;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
-
-import java.time.ZonedDateTime;
-import java.util.UUID;
 
 @Service
 public class ApiService {

@@ -1,8 +1,6 @@
 package bett.gustavo.rinhaBackend2025Api.dto;
 
 import bett.gustavo.rinhaBackend2025Model.model.Payment;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;

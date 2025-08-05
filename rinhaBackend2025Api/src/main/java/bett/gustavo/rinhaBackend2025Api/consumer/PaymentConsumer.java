@@ -8,22 +8,16 @@ import bett.gustavo.rinhaBackend2025Model.model.SituationPayment;
 import bett.gustavo.rinhaBackend2025Model.service.Common;
 import bett.gustavo.rinhaBackend2025Model.service.PaymentService;
 import jakarta.annotation.PostConstruct;
-import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
+import reactor.util.retry.Retry;
 
 import java.time.Duration;
-import java.util.concurrent.atomic.AtomicBoolean;
 
-@Slf4j
 @Component
 public class PaymentConsumer {
 
@@ -40,60 +34,50 @@ public class PaymentConsumer {
     @Qualifier("reactiveRedisTemplatePayment")
     private ReactiveRedisTemplate<String, Payment> reactiveRedisTemplate;
 
-    private final AtomicBoolean isDefaultHealthy = new AtomicBoolean(true);
-    private final AtomicBoolean isFallbackHealthy = new AtomicBoolean(true);
+    private static final int MAX_CONCURRENCY = 10;
+    private static final int MAX_RETRIES = 5;
 
     @PostConstruct
     public void init() {
-        monitorHealth();
         subscribeToChannel(Common.PAYMENT_QUEUE);
-    }
-
-    private void monitorHealth() {
-        Flux.interval(Duration.ofSeconds(1))
-                .flatMap(i -> Mono.zip(
-                        apiServiceConfig.defaultApiService(builder).getHealthCheck()
-                                .timeout(Duration.ofMillis(300))
-                                .onErrorResume(e -> Mono.empty())
-                                .doOnNext(h -> isDefaultHealthy.set(!h.failing())),
-
-                        apiServiceConfig.fallbackApiService(builder).getHealthCheck()
-                                .timeout(Duration.ofMillis(300))
-                                .onErrorResume(e -> Mono.empty())
-                                .doOnNext(h -> isFallbackHealthy.set(!h.failing()))
-                ))
-                .subscribeOn(Schedulers.boundedElastic())
-                .subscribe();
     }
 
     private void subscribeToChannel(String channelName) {
         reactiveRedisTemplate.listenToChannel(channelName)
-                .map(message -> message.getMessage())
-                .flatMap(this::handlePayment, 16)
-                .onErrorContinue((err, obj) -> log.error("Erro no processamento do pagamento", err))
+                .flatMap(msg -> processPayment(msg.getMessage())
+                                .retryWhen(
+                                        Retry.backoff(MAX_RETRIES, Duration.ofSeconds(1))
+                                                .maxBackoff(Duration.ofSeconds(10))
+                                                .jitter(0.5)
+                                ), MAX_CONCURRENCY
+                        , MAX_CONCURRENCY)
                 .subscribe();
     }
 
-    private Mono<Void> handlePayment(Payment payment) {
+    private Mono<Void> processPayment(Payment payment) {
         PaymentDtoSender dto = PaymentDtoSender.from(payment);
 
-        if (isDefaultHealthy.get()) {
-            return sendToApi(payment, dto, true);
-        } else if (isFallbackHealthy.get()) {
-            return sendToApi(payment, dto, false);
-        } else {
-            return reactiveRedisTemplate.convertAndSend(Common.PAYMENT_QUEUE, payment).then();
-        }
+        return checkHealthAndSend(payment, dto, true)
+                .onErrorResume(ex -> checkHealthAndSend(payment, dto, false))
+                .switchIfEmpty(retryLater(payment))
+                .then();
+    }
+
+    private Mono<Void> checkHealthAndSend(Payment payment, PaymentDtoSender dto, boolean isDefault) {
+        ApiService api = isDefault ? apiServiceConfig.defaultApiService(builder) : apiServiceConfig.fallbackApiService(builder);
+
+        return api.getHealthCheck()
+                .timeout(Duration.ofSeconds(1))
+                .filter(health -> health != null && !health.failing())
+                .flatMap(health -> sendToApi(payment, dto, isDefault))
+                .timeout(Duration.ofSeconds(2))
+                .onErrorResume(ex -> Mono.empty());
     }
 
     private Mono<Void> sendToApi(Payment payment, PaymentDtoSender dto, boolean isDefault) {
-        ApiService api = isDefault
-                ? apiServiceConfig.defaultApiService(builder)
-                : apiServiceConfig.fallbackApiService(builder);
+        ApiService api = isDefault ? apiServiceConfig.defaultApiService(builder) : apiServiceConfig.fallbackApiService(builder);
 
         return api.sendPayments(dto)
-                .timeout(Duration.ofMillis(300))
-                .doOnError(e -> log.error("Erro ao enviar pagamento: {}", e.getMessage()))
                 .flatMap(success -> Mono.fromRunnable(() -> {
                     Payment updated = Payment.atualizaPayment(payment, dto.requestedAt(), dto.requestedAtSeconds(),
                             isDefault ? SituationPayment.DEFAULT : SituationPayment.FALLBACK);
@@ -102,10 +86,13 @@ public class PaymentConsumer {
                     } else {
                         paymentService.saveFallback(updated);
                     }
-                }).then())
-                .onErrorResume(e -> {
-                    return reactiveRedisTemplate.convertAndSend(Common.PAYMENT_QUEUE, payment).then();
-                });
+                }).then());
     }
-}
 
+    private Mono<Void> retryLater(Payment payment) {
+        return Mono.delay(Duration.ofSeconds(5))
+                .flatMap(t -> reactiveRedisTemplate.convertAndSend(Common.PAYMENT_QUEUE, payment))
+                .then();
+    }
+
+}
