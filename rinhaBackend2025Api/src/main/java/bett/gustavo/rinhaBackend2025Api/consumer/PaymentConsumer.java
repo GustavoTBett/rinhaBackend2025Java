@@ -8,7 +8,9 @@ import bett.gustavo.rinhaBackend2025Model.model.SituationPayment;
 import bett.gustavo.rinhaBackend2025Model.service.Common;
 import bett.gustavo.rinhaBackend2025Model.service.PaymentService;
 import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
@@ -18,10 +20,11 @@ import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 
+@Slf4j
 @Component
 public class PaymentConsumer {
 
-    private static Logger logger;
+    private static final Logger logger = LoggerFactory.getLogger(PaymentConsumer.class);
 
     @Autowired
     private ApiServiceConfig apiServiceConfig;
