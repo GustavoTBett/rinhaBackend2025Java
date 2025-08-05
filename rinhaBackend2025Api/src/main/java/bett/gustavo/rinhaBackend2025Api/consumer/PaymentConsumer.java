@@ -16,15 +16,16 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.time.Duration;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Slf4j
 @Component
 public class PaymentConsumer {
-
-    private static final Logger logger = LoggerFactory.getLogger(PaymentConsumer.class);
 
     @Autowired
     private ApiServiceConfig apiServiceConfig;
@@ -39,67 +40,72 @@ public class PaymentConsumer {
     @Qualifier("reactiveRedisTemplatePayment")
     private ReactiveRedisTemplate<String, Payment> reactiveRedisTemplate;
 
+    private final AtomicBoolean isDefaultHealthy = new AtomicBoolean(true);
+    private final AtomicBoolean isFallbackHealthy = new AtomicBoolean(true);
+
     @PostConstruct
     public void init() {
+        monitorHealth();
         subscribeToChannel(Common.PAYMENT_QUEUE);
+    }
+
+    private void monitorHealth() {
+        Flux.interval(Duration.ofSeconds(1))
+                .flatMap(i -> Mono.zip(
+                        apiServiceConfig.defaultApiService(builder).getHealthCheck()
+                                .timeout(Duration.ofMillis(300))
+                                .onErrorResume(e -> Mono.empty())
+                                .doOnNext(h -> isDefaultHealthy.set(!h.failing())),
+
+                        apiServiceConfig.fallbackApiService(builder).getHealthCheck()
+                                .timeout(Duration.ofMillis(300))
+                                .onErrorResume(e -> Mono.empty())
+                                .doOnNext(h -> isFallbackHealthy.set(!h.failing()))
+                ))
+                .subscribeOn(Schedulers.boundedElastic())
+                .subscribe();
     }
 
     private void subscribeToChannel(String channelName) {
         reactiveRedisTemplate.listenToChannel(channelName)
-                .doOnNext(msg -> {
-                    Payment payment = msg.getMessage();
-
-                    PaymentDtoSender paymentDtoSender = PaymentDtoSender.from(payment);
-
-                    checkAndSend(payment, paymentDtoSender);
-                })
+                .map(message -> message.getMessage())
+                .flatMap(this::handlePayment, 16)
+                .onErrorContinue((err, obj) -> log.error("Erro no processamento do pagamento", err))
                 .subscribe();
     }
 
+    private Mono<Void> handlePayment(Payment payment) {
+        PaymentDtoSender dto = PaymentDtoSender.from(payment);
 
-    private void checkAndSend(Payment payment, PaymentDtoSender dto) {
-        apiServiceConfig.defaultApiService(builder)
-                .getHealthCheck()
-                .timeout(Duration.ofSeconds(2))
-                .onErrorResume(ex -> Mono.empty())
-                .subscribe(health -> {
-                    if (health != null && !health.failing()) {
-                        sendToApi(payment, dto, true);
-                    } else {
-                        apiServiceConfig.fallbackApiService(builder)
-                                .getHealthCheck()
-                                .timeout(Duration.ofSeconds(2))
-                                .onErrorResume(ex -> Mono.empty())
-                                .subscribe(fallbackHealth -> {
-                                    if (fallbackHealth != null && !fallbackHealth.failing()) {
-                                        sendToApi(payment, dto, false);
-                                    } else {
-                                        reactiveRedisTemplate.convertAndSend(Common.PAYMENT_QUEUE, payment);
-                                    }
-                                });
-                    }
-                });
+        if (isDefaultHealthy.get()) {
+            return sendToApi(payment, dto, true);
+        } else if (isFallbackHealthy.get()) {
+            return sendToApi(payment, dto, false);
+        } else {
+            return reactiveRedisTemplate.convertAndSend(Common.PAYMENT_QUEUE, payment).then();
+        }
     }
 
-    private void sendToApi(Payment payment, PaymentDtoSender dto, boolean isDefault) {
-        ApiService api = isDefault ? apiServiceConfig.defaultApiService(builder)
+    private Mono<Void> sendToApi(Payment payment, PaymentDtoSender dto, boolean isDefault) {
+        ApiService api = isDefault
+                ? apiServiceConfig.defaultApiService(builder)
                 : apiServiceConfig.fallbackApiService(builder);
 
-        api.sendPayments(dto)
-                .doOnError(error -> {
-                    reactiveRedisTemplate.convertAndSend(Common.PAYMENT_QUEUE, payment);
-                })
-                .doOnSuccess(success -> {
-                    logger.debug("Salvando payment");
+        return api.sendPayments(dto)
+                .timeout(Duration.ofMillis(300))
+                .doOnError(e -> log.error("Erro ao enviar pagamento: {}", e.getMessage()))
+                .flatMap(success -> Mono.fromRunnable(() -> {
+                    Payment updated = Payment.atualizaPayment(payment, dto.requestedAt(), dto.requestedAtSeconds(),
+                            isDefault ? SituationPayment.DEFAULT : SituationPayment.FALLBACK);
                     if (isDefault) {
-                        Payment paymentSave = Payment.atualizaPayment(payment, dto.requestedAt(), dto.requestedAtSeconds(), SituationPayment.DEFAULT);
-                        paymentService.saveDefault(paymentSave);
+                        paymentService.saveDefault(updated);
                     } else {
-                        Payment paymentSave = Payment.atualizaPayment(payment, dto.requestedAt(), dto.requestedAtSeconds(), SituationPayment.FALLBACK);
-                        paymentService.saveFallback(paymentSave);
+                        paymentService.saveFallback(updated);
                     }
-                })
-                .subscribe();
+                }).then())
+                .onErrorResume(e -> {
+                    return reactiveRedisTemplate.convertAndSend(Common.PAYMENT_QUEUE, payment).then();
+                });
     }
-
 }
+
